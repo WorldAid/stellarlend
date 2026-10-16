@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/oracle-hub-price-jump-bound",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "feat/oracle-hub-price-jump-bound": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "feat/oracle-hub-price-jump-bound",
+    "origin"
+  ]
+}
