@@ -10,7 +10,7 @@
 //!
 //! - **Lending (main contract)** — `borrow_event`, `repay_event`, `withdraw_event`,
 //!   `flash_loan_event`, `deposit_event` (vault vs borrow-collateral variants), plus
-//!   peg-deviation, stability-fee and utilization-alert events.
+//!   peg-deviation, stability-fee, utilization-alert and utilization-breaker events.
 //! - **Data store contract** — `ds_init`, `ds_save`, `ds_bkup`, `ds_rest`, `ds_migr`, `ds_writer`.
 //!
 //! # Deprecation notes
@@ -21,7 +21,7 @@
 
 pub use shared_events::*;
 
-use soroban_sdk::{contractevent, contracttype, Address, Env, String};
+use soroban_sdk::{contractevent, contracttype, Address, BytesN, Env, String};
 
 // ─── Lending (LendingContract) ─────────────────────────────────────────────
 
@@ -129,6 +129,54 @@ pub struct RiskUtilizationAlertEvent {
     pub utilization_bps: u32,
     pub total_debt: i128,
     pub debt_ceiling: i128,
+    pub timestamp: u64,
+}
+
+// ─── Code upgrades ──────────────────────────────────────────────────────────
+
+/// Lending contract code was replaced via `upgrade` (also used for rollbacks).
+#[contractevent]
+#[derive(Clone, Debug)]
+pub struct ContractUpgradedEvent {
+    #[topic]
+    pub admin: Address,
+    pub new_wasm_hash: BytesN<32>,
+    pub timestamp: u64,
+}
+
+// ─── Utilization circuit breaker ────────────────────────────────────────────
+
+/// Breaker configuration installed or changed by the admin.
+#[contractevent]
+#[derive(Clone, Debug)]
+pub struct UtilBreakerConfiguredEvent {
+    #[topic]
+    pub admin: Address,
+    pub enabled: bool,
+    pub trip_utilization_bps: u32,
+    pub reset_utilization_bps: u32,
+    pub max_borrow_while_tripped: i128,
+    pub timestamp: u64,
+}
+
+/// Utilization reached the trip threshold; new borrows are now throttled.
+#[contractevent]
+#[derive(Clone, Debug)]
+pub struct UtilBreakerTrippedEvent {
+    pub utilization_bps: u32,
+    pub trip_utilization_bps: u32,
+    pub total_debt: i128,
+    pub debt_ceiling: i128,
+    pub timestamp: u64,
+}
+
+/// Breaker re-armed, either automatically (utilization fell below the reset threshold) or by
+/// the admin (`manual = true`).
+#[contractevent]
+#[derive(Clone, Debug)]
+pub struct UtilBreakerResetEvent {
+    pub utilization_bps: u32,
+    pub manual: bool,
     pub timestamp: u64,
 }
 

@@ -250,6 +250,12 @@ jobs:
             });
           "
 
+      - name: SDK examples — compile and test
+        run: npm run test -w @stellarlend/sdk
+
+      - name: Devnet scripts — dry-run plan tests
+        run: npm run test:devnet
+
   # ─────────────────────────────────────────────
   # API (TypeScript / Express / Jest)
   # ─────────────────────────────────────────────

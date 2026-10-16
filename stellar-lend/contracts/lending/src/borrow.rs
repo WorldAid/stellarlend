@@ -56,6 +56,8 @@ pub enum BorrowError {
     InsufficientReserves = 11,
     /// Reentrant call detected
     ReentrancyDetected = 12,
+    /// Utilization circuit breaker is throttling new borrows
+    UtilizationThrottled = 13,
 }
 
 /// Borrow on behalf of a user when authorization is provided via a trusted delegate.
@@ -408,6 +410,8 @@ fn borrow_inner(
         return Err(BorrowError::DebtCeilingReached);
     }
 
+    crate::utilization_breaker::check_borrow(env, amount, new_total, limits.debt_ceiling)?;
+
     let mut debt_position = get_debt_position(env, &user, Some(&asset), rate_type);
     debt_position.rate_type = rate_type;
     let accrued_interest = calculate_interest(env, &debt_position)?;
@@ -447,6 +451,7 @@ fn borrow_inner(
     }
 
     crate::risk_monitor::on_utilization_changed(env, new_total, limits.debt_ceiling);
+    crate::utilization_breaker::on_debt_changed(env, new_total, limits.debt_ceiling);
 
     emit_borrow_event(env, user, asset, amount);
 
@@ -564,6 +569,7 @@ pub fn repay_with_rate(
             .checked_sub(remaining_repayment)
             .ok_or(BorrowError::Overflow)?;
         set_total_debt(env, new_total);
+        crate::utilization_breaker::on_debt_changed(env, new_total, get_debt_ceiling(env));
     }
 
     save_debt_position(env, &user, &debt_position);
@@ -896,6 +902,7 @@ pub fn sweep_debt_dust(env: &Env, user: Address, asset: Address) -> Result<i128,
         let total_debt = get_total_debt(env);
         let new_total = total_debt.checked_sub(swept).ok_or(BorrowError::Overflow)?;
         set_total_debt(env, new_total);
+        crate::utilization_breaker::on_debt_changed(env, new_total, get_debt_ceiling(env));
 
         return Ok(swept);
     }
@@ -1154,4 +1161,5 @@ stellarlend_errors::impl_contract_error! {
     PositionHealthy => InvalidState, "Position is healthy and cannot be liquidated";
     InsufficientReserves => Insufficient, "Insufficient reserves to recover bad debt", ContactAdmin;
     ReentrancyDetected => Reentrancy, "Reentrant call detected";
+    UtilizationThrottled => LimitExceeded, "Utilization circuit breaker is throttling new borrows", RetryLater;
 }

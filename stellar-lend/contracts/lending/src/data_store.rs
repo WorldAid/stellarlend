@@ -39,8 +39,7 @@ use crate::events::{
 };
 use crate::reentrancy::{ReentrancyGuard, ReentrancyKey};
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, panic_with_error, Address, Bytes, Env,
-    String, Vec,
+    contract, contracterror, contracttype, panic_with_error, Address, Bytes, Env, String, Vec,
 };
 use stellarlend_storage_layer::{Storage, StorageTier};
 
@@ -132,7 +131,10 @@ pub enum StoreKey {
 #[contract]
 pub struct DataStore;
 
-#[contractimpl]
+// The standalone `data-store` contract is deployed from its own crate. Exporting its
+// entrypoints here as well collides with `LendingContract`'s (`get_admin`, ...) in the
+// lending wasm, so they are only generated for the in-crate tests.
+#[cfg_attr(test, soroban_sdk::contractimpl)]
 impl DataStore {
     // ───────────────────────────────────────────────────
     // Initialisation

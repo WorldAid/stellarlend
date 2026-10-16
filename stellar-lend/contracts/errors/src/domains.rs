@@ -61,6 +61,8 @@ pub const LENDING_TOKEN_ADAPTER: ErrorDomain = ErrorDomain::new(ContractId::Lend
 pub const LENDING_YIELD_CURVE: ErrorDomain = ErrorDomain::new(ContractId::Lending, 23);
 /// `lending::YieldError`
 pub const LENDING_YIELD_FARMING: ErrorDomain = ErrorDomain::new(ContractId::Lending, 24);
+/// `lending::UtilizationBreakerError`
+pub const LENDING_UTILIZATION_BREAKER: ErrorDomain = ErrorDomain::new(ContractId::Lending, 25);
 /// `amm::AmmError`
 pub const AMM: ErrorDomain = ErrorDomain::new(ContractId::Amm, 0);
 /// `bridge::ContractError`
@@ -171,6 +173,7 @@ pub const ALL: &[ErrorDomain] = &[
     LENDING_TOKEN_ADAPTER,
     LENDING_YIELD_CURVE,
     LENDING_YIELD_FARMING,
+    LENDING_UTILIZATION_BREAKER,
     AMM,
     BRIDGE,
     BRIDGE_LENDING,
